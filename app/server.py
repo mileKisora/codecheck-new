@@ -2,6 +2,7 @@
 
 from bottle import static_file, route, run
 from threading import Thread
+from bot import Bot
 
 import asyncio
 import websockets
@@ -17,18 +18,25 @@ def httpHandler():
 
     @route('/<filename>')
     def server_static(filename):
-      return static_file(filename, root='./app')    
+      return static_file(filename, root='./app')
 
     run(host='localhost', port=9000)
 
 
 @asyncio.coroutine
 def receive_send(websocket, path):
-  # Please write your code here
-  try:
-    print("Receiving ...")
-  except KeyboardInterrupt:
-    print('\nCtrl-C (SIGINT) caught. Exiting...')  
+    while True:
+        try:
+            print("Receiving ...")
+            result = yield from websocket.recv()
+            command = result.split(" ")
+            if(command[0] == "bot"):
+                bot = Bot({"command": command[1], "data": command[2]})
+                bot.generate_hash()
+                print(bot.hash)
+                websocket.send(bot.hash)
+        except KeyboardInterrupt:
+            print('\nCtrl-C (SIGINT) caught. Exiting...')
 
 if __name__ == '__main__':
   loop = asyncio.get_event_loop()
